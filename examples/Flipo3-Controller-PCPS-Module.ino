@@ -88,7 +88,7 @@ void CurrentPulse()
   do {value = analogRead(FB_VF);}       // Measure the voltage of the accumulated charge
   while (value < 500);                  // ~2.5V this voltage means that the current pulse is ready
  
-  digitalWrite(EN_VF, LOW);             // Turn ON PCPS module- charging complete 
+  digitalWrite(EN_VF, LOW);             // Turn OFF PCPS module- charging complete 
 }
 
 void SetDisc(uint8_t discNumber)
