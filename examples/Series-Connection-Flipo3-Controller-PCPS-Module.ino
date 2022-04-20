@@ -1,12 +1,18 @@
+/************************* CHANGE THIS ***************************************************/
+#define how_many_flipo_modules  2     // How many Flipo #3 modules are connected in series
+/*****************************************************************************************/
+
 // Flipo Project - https://Flipo.io
-// https://flipo.io/project/pulse-current-power-supply/
+// https://flipo.io/project/controller-flip-disc-3
+// https://github.com/marcinsaj/Flipo-Controller-Flip-Disc-3
+// https://flipo.io/project/pulse-current-power-supply
 // https://github.com/marcinsaj/Flipo-Pulse-Current-Power-Supply
 //
-// Basic example of Flipo#3 module control - flip on/off 3 discs
+// This example demonstrates how to control multiple Flipo#3 modules
 //
 // Hardware:
-// Pulse Current Power Supply Module for flip discs - https://flipo.io/project/pulse-current-power-supply/
-// Flipo#3 Module for 3 flip discs - https://flipo.io/project/controller-flip-disc-3/
+// Flipo#3 Module for 3 flip discs - https://flipo.io/project/controller-flip-disc-3
+// Pulse Current Power Supply Module for flip discs - https://flipo.io/project/pulse-current-power-supply
 // Arduino UNO
 
 
@@ -19,7 +25,8 @@
 #define EN_VF       A0    // Turn ON/OFF charging PCPS module
 #define FB_VF       A1    // Measurement output for checking if the current pulse is ready
 
-int value;
+uint8_t *discModePointer;
+uint16_t value = 0;
 
 // Bit notation for Flipo#3 controller - set flip-discs
 // Always active only two bits corresponding to control outputs 
@@ -51,71 +58,109 @@ void setup()
   digitalWrite(CLK_PIN, LOW);
 
   pinMode(EN_VF, OUTPUT);
-  digitalWrite(EN_VF, LOW); 
+  digitalWrite(EN_VF, LOW);
 
-  ShiftOutData(0);            // Clear Flipo #3 Controller
+  ClearController();            // Clear all Flipo #3 Controllers
 
-  PrepareCurrentPulse();      // Prepare current pulse
+  PrepareCurrentPulse();        // Prepare current pulse
 }
 
 void loop()
 {
-  // Reset all 3 flip discs
-  for(int i = 0; i < 3; i++)
-  {
-    ResetDisc(i);
-    delay(500); 
-  } 
-
-  // Set all 3 flip discs
-  for(int i = 0; i < 3; i++)
+// If you want flip first disc call SetDisc(0); - always count from "0"
+// If you want flip disc no.10 just call SetDisc(9);    
+  
+  for(int i = 0; i < how_many_flipo_modules * 3; i++)
   {
     SetDisc(i);
-    delay(500);   
+    delay(500); 
   }
+
+  for(int i = 0; i < how_many_flipo_modules * 3; i++)
+  {
+    ResetDisc(i);
+    delay(500);  
+  }
+}
+
+// Clear all Flipo #3 Controllers
+void ClearController(void)
+{
+  ShiftOutDataStart();
+
+  for(int i = 0; i < how_many_flipo_modules; i++)
+  {
+    ShiftOutData(0);
+  }
+
+  ShiftOutDataEnd();  
 }
 
 // First charging - setup call
 void PrepareCurrentPulse(void)
 {
-  CurrentPulse();
-}
+  CurrentPulseON();
+} 
 
-void CurrentPulse()
+void CurrentPulseON()
 {
   digitalWrite(EN_VF, HIGH);            // Turn ON PCPS module- charging begin
 
   do {value = analogRead(FB_VF);}       // Measure the voltage of the accumulated charge
   while (value < 500);                  // ~2.5V this voltage means that the current pulse is ready
  
-  digitalWrite(EN_VF, LOW);             // Turn ON PCPS module- charging complete 
+  digitalWrite(EN_VF, LOW);             // Turn OFF PCPS module- charging complete
+}
+
+void CurrentPulseOFF(void)
+{
+  ClearController();                    // Clear all Flipo #3 Controllers
 }
 
 void SetDisc(uint8_t discNumber)
 {
-  CurrentPulse();                       // Prepare current pulse - charging begin
-  ShiftOutData(setDisc[discNumber]);    // Turn on flip-disc controller corrsponding outputs
-  delay(1);                             // Flip-disc required 1ms current pulse to flip
-
-  ShiftOutData(0);                      // Absolutely required!
-                                        // This function here turns off the current pulse 
-                                        // and cleans the controller outputs
+  discModePointer = setDisc;            // Set pointer to the setDisc bit array
+  ModeDisc(discNumber);
 }
 
 void ResetDisc(uint8_t discNumber)
 {
-  CurrentPulse();                       // Prepare current pulse - charging begin
-  ShiftOutData(resetDisc[discNumber]);  // Turn on flip-disc controller corrsponding outputs
-  delay(1);                             // Flip-disc required 1ms current pulse to flip
+  discModePointer = resetDisc;          // Set pointer to the resetDisc bit array
+  ModeDisc(discNumber);
+}
 
-  ShiftOutData(0);                      // Absolutely required!
+void ModeDisc(uint8_t discNumber)
+{
+  CurrentPulseON();                     // Prepare current pulse
+
+  ShiftOutDataStart();                  // Transfer data begin   
+
+  // Turn on flip-disc controller corrsponding outputs
+  for(int i = (how_many_flipo_modules-1); i >= 0; i--)
+  {
+    if(discNumber / 3 == i) ShiftOutData(discModePointer[discNumber % 3]);
+    else ShiftOutData(0);
+  }
+
+  ShiftOutDataEnd();                    // Transfer data complete
+  
+  delay(1);                             // Flip-disc required 1ms current pulse to flip
+  CurrentPulseOFF();                    // Absolutely required!
                                         // This function here turns off the current pulse 
-                                        // and cleans the controller outputs
+                                        // and cleans the controller outputs    
+}
+
+void ShiftOutDataStart(void)
+{
+  digitalWrite(EN_PIN, LOW);            // Transfer data begin    
 }
 
 void ShiftOutData(uint8_t discNumber)
 {
-  digitalWrite(EN_PIN, LOW);            // Transfer data begin
   shiftOut(DIN_PIN, CLK_PIN, MSBFIRST, discNumber);   // Send data to the controller
+}
+
+void ShiftOutDataEnd(void)
+{
   digitalWrite(EN_PIN, HIGH);           // Transfer data complete
 }
