@@ -1,4 +1,4 @@
-// Flipo Project - https://Flipo.io
+// Marcin Saj Flipo Project - https://Flipo.io
 // https://flipo.io/project/pulse-current-power-supply/
 // https://github.com/marcinsaj/Flipo-Pulse-Current-Power-Supply
 //
