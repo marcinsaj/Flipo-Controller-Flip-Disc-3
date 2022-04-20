@@ -2,7 +2,7 @@
 #define how_many_flipo_modules  2     // How many Flipo #3 modules are connected in series
 /*****************************************************************************************/
 
-// Flipo Project - https://Flipo.io
+// Marcin Saj Flipo Project - https://Flipo.io
 // https://flipo.io/project/controller-flip-disc-3
 // https://github.com/marcinsaj/Flipo-Controller-Flip-Disc-3
 // https://flipo.io/project/pulse-current-power-supply
