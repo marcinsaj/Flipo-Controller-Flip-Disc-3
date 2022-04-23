@@ -1,5 +1,5 @@
 /************************* CHANGE THIS ***************************************************/
-#define how_many_flipo_modules  2     // How many Flipo #3 modules are connected in series
+#define how_many_flipo_modules  4     // How many Flipo #3 modules are connected in series
 /*****************************************************************************************/
 
 // Marcin Saj Flipo Project - https://Flipo.io
